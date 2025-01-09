@@ -32,7 +32,7 @@ def run_aider(message):
         
         # Запускаем aider с переданным текстом
         process = subprocess.Popen(
-            ['aider', text], 
+            ['aider', '--model', 'openrouter/anthropic/claude-3-5-haiku', 'bot.py', '-m "', text, '"'], 
             stdout=subprocess.PIPE, 
             stderr=subprocess.PIPE, 
             text=True
