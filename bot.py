@@ -3,6 +3,7 @@ import subprocess
 import telebot
 import threading
 import time
+import random
 from telebot import types
 import sys
 from dotenv import load_dotenv
@@ -71,6 +72,38 @@ def handle_aider_command(message):
     
     run_aider(message)
 
+@bot.message_handler(commands=['dice'])
+def roll_dice(message):
+    """
+    Обработчик команды /dice для броска кубика
+    """
+    if message.from_user.id not in ALLOWED_USERS:
+        bot.reply_to(message, "У вас нет доступа к этому боту.")
+        return
+    
+    # Бросок кубика для пользователя
+    user_roll = random.randint(1, 6)
+    
+    # Бросок кубика для бота
+    bot_roll = random.randint(1, 6)
+    
+    # Определение победителя
+    if user_roll > bot_roll:
+        result = "Вы выиграли! 🎉"
+    elif user_roll < bot_roll:
+        result = "Я выиграл! 🤖"
+    else:
+        result = "Ничья! 🤝"
+    
+    # Отправка результатов
+    response = (
+        f"Вы бросили кубик и выпало: {user_roll} 🎲\n"
+        f"Я бросил кубик и выпало: {bot_roll} 🎲\n"
+        f"{result}"
+    )
+    
+    bot.reply_to(message, response)
+
 def start_bot():
     """
     Функция для запуска бота с автоперезагрузкой
@@ -122,4 +155,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
