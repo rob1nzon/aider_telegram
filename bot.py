@@ -4,6 +4,7 @@ import telebot
 import threading
 import time
 import random
+import requests
 from telebot import types
 import sys
 from dotenv import load_dotenv
@@ -13,10 +14,45 @@ load_dotenv()
 
 # Получаем значения из .env
 BOT_TOKEN = os.getenv('BOT_TOKEN')
+WEATHER_API_KEY = os.getenv('WEATHER_API_KEY')
 ALLOWED_USERS = [int(id) for id in os.getenv('ALLOWED_USERS', '').split(',') if id]
 
 # Создаем бота
 bot = telebot.TeleBot(BOT_TOKEN)
+
+def get_weather(city):
+    """
+    Функция для получения погоды в городе
+    """
+    base_url = "http://api.openweathermap.org/data/2.5/weather"
+    params = {
+        'q': city,
+        'appid': WEATHER_API_KEY,
+        'units': 'metric',
+        'lang': 'ru'
+    }
+    
+    try:
+        response = requests.get(base_url, params=params)
+        data = response.json()
+        
+        if response.status_code == 200:
+            temp = data['main']['temp']
+            feels_like = data['main']['feels_like']
+            description = data['weather'][0]['description']
+            
+            weather_message = (
+                f"Погода в {city}:\n"
+                f"Температура: {temp}°C\n"
+                f"Ощущается как: {feels_like}°C\n"
+                f"Описание: {description}"
+            )
+            return weather_message
+        else:
+            return f"Не удалось получить погоду для города {city}"
+    
+    except Exception as e:
+        return f"Произошла ошибка: {str(e)}"
 
 def run_aider(message):
     """
@@ -103,6 +139,26 @@ def roll_dice(message):
     )
     
     bot.reply_to(message, response)
+
+@bot.message_handler(commands=['weather'])
+def handle_weather_command(message):
+    """
+    Обработчик команды /weather для получения погоды
+    """
+    if message.from_user.id not in ALLOWED_USERS:
+        bot.reply_to(message, "У вас нет доступа к этому боту.")
+        return
+    
+    # Извлекаем название города после команды /weather
+    city = message.text.replace('/weather', '').strip()
+    
+    if not city:
+        bot.reply_to(message, "Пожалуйста, укажите город после команды /weather")
+        return
+    
+    # Получаем и отправляем погоду
+    weather_info = get_weather(city)
+    bot.reply_to(message, weather_info)
 
 def start_bot():
     """
